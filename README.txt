@@ -1,10 +1,12 @@
-=== Velvpay Official Plugin ===
+=== Velvpay Official ===
 Contributors: velvtechnologies
 Tags: payment, velvpay, woocommerce
 Requires at least: 5.0
-Tested up to: 6.0
+Tested up to: 6.7
 Stable tag: 1.0.1
-License: GPL2
+License: GPLv3
+
+Short Description: Integrate Velvpay as a seamless payment method in your WooCommerce store.
 
 == Description ==
 

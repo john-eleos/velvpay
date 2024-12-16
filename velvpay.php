@@ -1,11 +1,12 @@
 <?php
 /*
- * Plugin Name: velvpay official plugin
+ * Plugin Name: Velvpay Official
  * Plugin URI: 
  * Description: Allow for seamless payment using the velvpay platform.
  * Author: Velv Technologies Limited
  * Author URI: https://velvpay.com
  * Version: 1.0.1
+ * License: GPLv3
  */
 
  use Digikraaft\VelvPay\VelvPay;
