@@ -1,0 +1,24 @@
+{
+    "name": "eleos/velvpay",
+    "description": "A WordPress plugin designed to help African businesses optimize their payment operations.",
+    "type": "project",
+    "require": {
+        "digikraaft/velvpay-php": "^1.0"
+    },
+    "require-dev": {
+        "digikraaft/velvpay-php": "^1.0"  
+    },
+    "autoload": {
+        "psr-4": {
+            "Eleos\\Velvpay\\": "."
+        }
+    },
+    "authors": [
+        {
+            "name": "Eleos",
+            "email": "osunifedayo@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",  
+    "prefer-stable": true            
+}

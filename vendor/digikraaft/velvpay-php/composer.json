@@ -1,0 +1,54 @@
+{
+    "name": "digikraaft/velvpay-php",
+    "description": "PHP Implementation of VelvPay API",
+    "keywords": [
+        "digikraaft",
+        "velvpay-php",
+        "paystack"
+    ],
+    "homepage": "https://github.com/digikraaft/velvpay-php",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tim Oladoyinbo",
+            "email": "hello@digikraaft.ng",
+            "homepage": "https://digikraaft.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.0|^8.1|^8.2",
+        "guzzlehttp/guzzle": "^7.2.0",
+        "ext-json": "*",
+        "ext-openssl": "*"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^2.19",
+        "mockery/mockery": "^1.4",
+        "php-coveralls/php-coveralls": "^2.2",
+        "phpunit/phpunit": "^9.0",
+        "scrutinizer/ocular": "^1.7",
+        "vimeo/psalm": "^5.25.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Digikraaft\\VelvPay\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Digikraaft\\VelvPay\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "psalm": "vendor/bin/psalm",
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "format": "vendor/bin/php-cs-fixer fix --allow-risky=yes"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
