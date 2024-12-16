@@ -147,6 +147,8 @@ function velvpay_init_payment_class() {
                     postPaymentInstructions: 'Thank you for your order.'
                 );
         
+                // Log the response for debugging
+error_log(print_r($response, true));
                 // Check if the payment was successful
                 if ($response && $response->status === 'success') {
                     // Store the successful response in the order
