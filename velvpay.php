@@ -64,7 +64,7 @@ function velvpay_init_payment_class() {
             add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         
             // We need custom JavaScript to obtain a token
-            add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
+            // add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
             
 
             // webhook for any payment status updates becomes http://{{URL}}/wc-api/velvpay/
