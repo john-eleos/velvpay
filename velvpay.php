@@ -58,6 +58,11 @@ function velvpay_init_payment_class() {
             $this->publishable_key = $this->get_option('publishable_key');
             $this->encryption_key = $this->get_option('encryption_key');
 
+
+            // Initialize the webhook token and URL
+            $this->webhook_token = $this->generate_webhook_token(); // Ensure it's initialized
+            $this->webhook_url = $this->get_webhook_url(); // Initialize webhook URL
+
             // Action hook to save the settings
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
             add_action('woocommerce_admin_field_regenerate_webhook_token', array($this, 'regenerate_webhook_token'));
