@@ -120,18 +120,18 @@ function velvpay_init_payment_class() {
                     $order->save();
                     error_log("Payment successful for order ID: $order_id.");
 
+                    $paymentUrl = $response->link;
 
-
-                    // Output JavaScript to open the payment link
-                    add_action('wp_footer', function() use ($response) {
-                        echo '<script type="text/javascript">window.open("' . esc_url($response->link) . '", "_blank");</script>';
-                    });
+                   // Trigger a browser redirect using JavaScript
+                    echo "<script type='text/javascript'>
+                    window.open('$paymentUrl', '_blank');
+                </script>";
 
                     // Return success
-                    return array(
-                        'result' => 'success',
-                        'redirect' => '',
-                    );
+                    // return array(
+                    //     'result' => 'success',
+                    //     'redirect' => '',
+                    // );
 
                 } else {
                     error_log("Payment failed for order ID: $order_id. Response: " . json_encode($response));
