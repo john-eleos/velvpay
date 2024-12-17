@@ -120,11 +120,6 @@ function velvpay_init_payment_class() {
                     $order->save();
                     error_log("Payment successful for order ID: $order_id.");
 
-                    // return array(
-                    //     'result' => 'success',
-                    //     'redirect' => add_query_arg('payment_link', esc_url($response->link), wc_get_cart_url()),
-                    // );
-
 
 
                     // Output JavaScript to open the payment link
@@ -258,34 +253,4 @@ function velvpay_regenerate_webhook_token() {
     wp_die();
 }
 
-// Add JavaScript for redirecting after payment
-// add_action('wp_footer', 'velvpay_checkout_redirect');
-// function velvpay_checkout_redirect() {
-//     if (is_checkout()) {
-//         ?>
-//         <script type="text/javascript">
-//         jQuery(function($) {
-//             var urlParams = new URLSearchParams(window.location.search);
-//             var paymentLink = urlParams.get('payment_link');
 
-//             if (paymentLink) {
-//                 // Create a temporary link element
-//                 var link = document.createElement('a');
-//                 link.href = paymentLink;
-//                 link.target = '_blank'; // Open in new tab
-//                 link.style.display = 'none'; // Hide the link
-
-//                 document.body.appendChild(link); // Append the link to the body
-//                 link.click(); // Simulate a click on the link
-//                 document.body.removeChild(link); // Remove the link after clicking
-
-//                 // Optionally, redirect to the cart or show a message
-//                 setTimeout(function() {
-//                     window.location.href = '<?php echo esc_url(wc_get_cart_url()); ?>';
-//                 }, 1000); // Adjust delay as needed
-//             }
-//         });
-//         </script>
-//         <?php
-//     }
-// }
