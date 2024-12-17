@@ -14,6 +14,11 @@ require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 // Ensure proper inclusion of core WordPress files
 require_once(ABSPATH . 'wp-admin/includes/plugin.php');
 
+use Digikraaft\VelvPay\VelvPay;
+use Digikraaft\VelvPay\Payment;
+use Digikraaft\VelvPay\Exceptions\InvalidArgumentException;
+use Digikraaft\VelvPay\Util\Util;
+
 // Custom debug output function
 function debug_output($data) {
     echo '<pre>';
@@ -60,7 +65,7 @@ function velvpay_init_payment_class() {
 
 
             // Initialize the webhook token and URL
-            $this->webhook_token = $this->generate_webhook_token(); // Ensure it's initialized
+            $this->webhook_token = $this->get_option('webhook_token'); // Ensure it's initialized
             $this->webhook_url = $this->get_webhook_url(); // Initialize webhook URL
 
             // Action hook to save the settings
