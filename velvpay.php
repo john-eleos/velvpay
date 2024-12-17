@@ -144,29 +144,22 @@ function velvpay_init_payment_class() {
         }
 
         public function process_payment($order_id) {
+            // Get the order object
             $order = wc_get_order($order_id);
         
-            // Debugging output for order details
-            debug_output($order); // Uncomment for debugging
+            // Log the start of the payment process
+            error_log("Starting payment process for order ID: $order_id");
         
-            // Set the VelvPay keys
             try {
-                VelvPay::setKeys(
-                    $this->private_key,
-                    $this->publishable_key,
-                    $this->encryption_key
-                );
-            } catch (InvalidArgumentException $e) {
-                error_log('Invalid API keys: ' . $e->getMessage());
-                wc_add_notice('Payment error: Invalid API keys.', 'error');
-                return;
-            }
+                // Set the VelvPay API keys
+                VelvPay::setKeys($this->private_key, $this->publishable_key, $this->encryption_key);
+                error_log("VelvPay keys set successfully.");
         
-            // Set custom reference for the order
-            VelvPay::setRequestReference('ORDER_' . $order->get_id());
+                // Set a custom reference for the order
+                VelvPay::setRequestReference('ORDER_' . $order->get_id());
+                error_log("Request reference set to: ORDER_" . $order->get_id());
         
-            // Initiate payment using the VelvPay SDK
-            try {
+                // Initiate payment using the VelvPay SDK
                 $response = Payment::initiatePayment(
                     amount: $order->get_total(),
                     isNaira: true,
@@ -176,14 +169,15 @@ function velvpay_init_payment_class() {
                     postPaymentInstructions: 'Thank you for your order.'
                 );
         
-                // Debugging output for the response
-                debug_output($response); // Uncomment for debugging
+                // Log the response from VelvPay
+                error_log("Response received from VelvPay: " . json_encode($response));
         
                 // Check if the payment was successful
                 if ($response && $response->status === 'success') {
                     // Store the successful response in the order
                     $order->update_meta_data('_velvpay_response', json_encode($response));
                     $order->save();
+                    error_log("Payment successful for order ID: $order_id.");
         
                     // Redirect customer to payment link
                     return array(
@@ -191,12 +185,14 @@ function velvpay_init_payment_class() {
                         'redirect' => $response->link,
                     );
                 } else {
-                    error_log('Payment response error: ' . json_encode($response));
+                    // Log payment failure
+                    error_log("Payment failed for order ID: $order_id. Response: " . json_encode($response));
                     wc_add_notice('Payment failed. Please try again.', 'error');
                     return;
                 }
             } catch (Exception $e) {
-                error_log('Payment processing error: ' . $e->getMessage());
+                // Log any exceptions that occur
+                error_log('Payment processing error for order ID: ' . $order_id . ' - ' . $e->getMessage());
                 wc_add_notice('Payment error: ' . $e->getMessage(), 'error');
                 return;
             }
