@@ -5,7 +5,7 @@
  * Description: Allow for seamless payment using the Velvpay platform.
  * Author: Velv Technologies Limited
  * Author URI: https://velvpay.com
- * Version: 1.0.1
+ * Version: 1.0.2
  * License: GPLv3
  */
 
@@ -40,14 +40,14 @@ function velvpay_init_payment_class() {
             $this->init_settings();
 
             // Load settings
-            $this->title = $this->get_option('title');
-            $this->description = $this->get_option('description');
-            $this->enabled = $this->get_option('enabled');
-            $this->charge_customer = $this->get_option('charge_customer');
-            $this->private_key = $this->get_option('private_key');
-            $this->publishable_key = $this->get_option('publishable_key');
-            $this->encryption_key = $this->get_option('encryption_key');
-            $this->webhook_token = $this->get_option('webhook_token');
+            $this->title = sanitize_text_field($this->get_option('title'));
+            $this->description = sanitize_textarea_field($this->get_option('description'));
+            $this->enabled = $this->get_option('enabled') === 'yes' ? 'yes' : 'no';
+            $this->charge_customer = $this->get_option('charge_customer') === 'yes';
+            $this->private_key = sanitize_text_field($this->get_option('private_key'));
+            $this->publishable_key = sanitize_text_field($this->get_option('publishable_key'));
+            $this->encryption_key = sanitize_text_field($this->get_option('encryption_key'));
+            $this->webhook_token = sanitize_text_field($this->get_option('webhook_token'));
             $this->webhook_url = $this->get_webhook_url();
 
             // Action hooks for settings
@@ -58,13 +58,13 @@ function velvpay_init_payment_class() {
         public function init_form_fields() {
             $this->form_fields = array(
                 'enabled' => array('title' => 'Enable/Disable', 'label' => 'Enable Velvpay', 'type' => 'checkbox', 'default' => 'no'),
-                'charge_customer' => array('title' => 'Charge Customer', 'label' => 'Allow your customer bear the fee', 'type' => 'checkbox', 'default' => 'no'),
+                'charge_customer' => array('title' => 'Charge Customer', 'label' => 'Allow your customer to bear the fee', 'type' => 'checkbox', 'default' => 'no'),
                 'title' => array('title' => 'Title', 'type' => 'text', 'description' => 'Title seen during checkout.', 'default' => 'VelvPay Payment', 'desc_tip' => true),
                 'description' => array('title' => 'Description', 'type' => 'textarea', 'description' => 'Description seen during checkout.', 'default' => 'Secure payment via VelvPay.'),
                 'publishable_key' => array('title' => 'Publishable Key', 'type' => 'text'),
                 'private_key' => array('title' => 'Private Key', 'type' => 'password'),
                 'encryption_key' => array('title' => 'Encryption Key', 'type' => 'password', 'description' => 'VelvPay encryption key for security.'),
-                'webhook_url' => array('title' => 'Webhook URL', 'type' => 'text', 'description' => sprintf('Copy this URL to your VelvPay account for webhook notifications: %s', esc_url($this->get_webhook_url())), 'default' => $this->get_webhook_url(), 'custom_attributes' => array('readonly' => 'readonly')),
+                'webhook_url' => array('title' => 'Webhook URL', 'type' => 'text', 'description' => sprintf('Copy this URL to your VelvPay account for webhook notifications: %s', esc_url($this->get_webhook_url())), 'default' => esc_url($this->get_webhook_url()), 'custom_attributes' => array('readonly' => 'readonly')),
                 'webhook_token' => array('title' => 'Webhook Token', 'type' => 'text', 'description' => 'Token for authenticating webhook requests.', 'default' => $this->generate_webhook_token(), 'custom_attributes' => array('readonly' => 'readonly')),
             );
         }
@@ -85,6 +85,11 @@ function velvpay_init_payment_class() {
             $order = wc_get_order($order_id);
             error_log("Starting payment process for order ID: $order_id");
 
+            if (!$order || !$order->get_total() || $order->get_status() !== 'pending') {
+                wc_add_notice('Invalid order or already processed.', 'error');
+                return;
+            }
+
             try {
                 VelvPay::setKeys($this->private_key, $this->publishable_key, $this->encryption_key);
                 error_log("VelvPay keys set successfully.");
@@ -97,7 +102,7 @@ function velvpay_init_payment_class() {
                     $item_descriptions[] = $item->get_name() . ' (Qty: ' . $item->get_quantity() . ')';
                 }
                 $description = implode(', ', $item_descriptions);
-                $chargeCustomer = $this->get_option('charge_customer') === 'yes';
+                $chargeCustomer = $this->charge_customer;
 
                 $response = Payment::initiatePayment(
                     amount: $order->get_total(),
@@ -126,7 +131,7 @@ function velvpay_init_payment_class() {
                 }
             } catch (Exception $e) {
                 error_log('Payment processing error for order ID: ' . $order_id . ' - ' . $e->getMessage());
-                wc_add_notice('Payment error: ' . $e->getMessage(), 'error');
+                wc_add_notice('Payment error: ' . esc_html($e->getMessage()), 'error');
                 return;
             }
         }
@@ -136,9 +141,17 @@ function velvpay_init_payment_class() {
                 wp_die('Invalid request', 'Invalid Request', array('response' => 400));
             }
 
+            // Validate Authorization header
+            $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? trim($_SERVER['HTTP_AUTHORIZATION']) : '';
+            $expected_token = 'Bearer ' . $this->get_option('webhook_token');
+
+            if ($auth_header !== $expected_token) {
+                wp_die('Unauthorized request', 'Unauthorized', array('response' => 401));
+            }
+
             $payload = json_decode(file_get_contents('php://input'), true);
             if (isset($payload['link'])) {
-                $short_link = $payload['link'];
+                $short_link = sanitize_text_field($payload['link']);
                 
                 $args = array(
                     'limit' => -1,
@@ -155,7 +168,7 @@ function velvpay_init_payment_class() {
                 $orders = wc_get_orders($args);
                 if (!empty($orders)) {
                     $order = $orders[0];
-                    $status = $payload['status'];
+                    $status = sanitize_text_field($payload['status']);
 
                     switch ($status) {
                         case 'successful':
@@ -220,8 +233,13 @@ function velvpay_checkout_redirect() {
             var paymentLink = urlParams.get('payment_link');
 
             if (paymentLink) {
+                // Open the payment link in a new tab
                 window.open(paymentLink, '_blank');
-                window.location.href = '<?php echo esc_url(wc_get_cart_url()); ?>';
+
+                // Redirect to the cart page after a slight delay
+                setTimeout(function() {
+                    window.location.href = '<?php echo esc_url(wc_get_cart_url()); ?>';
+                }, 1000); // Adjust delay as needed
             }
         });
         </script>
