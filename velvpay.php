@@ -115,30 +115,29 @@ function velvpay_init_payment_class() {
 
         public function process_payment($order_id) {
             $order = wc_get_order($order_id);
-
-            // Debugging output
-            debug_output($order); // Remove or comment out after debugging
-
-            // Check if the VelvPay class exists
-            if (!class_exists('Digikraaft\VelvPay\VelvPay')) {
-                error_log('VelvPay class not found!');
-                wc_add_notice(__('Payment error: VelvPay integration failed.', 'woocommerce'), 'error');
-                return;
-            }
-
+        
+            // Debugging output for order details
+            debug_output($order); // Uncomment for debugging
+        
+            // Set the VelvPay keys
             try {
-                // Set VelvPay keys
                 VelvPay::setKeys(
                     $this->private_key,
                     $this->publishable_key,
                     $this->encryption_key
                 );
-
-                // Set custom reference to the order ID
-                VelvPay::setRequestReference('ORDER_' . $order->get_id());
-
-                // Initiate payment using the VelvPay SDK
-                $response = Payment::initiatePayment(
+            } catch (InvalidArgumentException $e) {
+                error_log('Invalid API keys: ' . $e->getMessage());
+                wc_add_notice(__('Payment error: Invalid API keys.', 'woocommerce'), 'error');
+                return;
+            }
+        
+            // Set custom reference for the order
+            VelvPay::setRequestReference('ORDER_' . $order->get_id());
+        
+            // Initiate payment using the VelvPay SDK
+            try {
+                $response = VelvPay::initiatePayment(
                     amount: $order->get_total(),
                     isNaira: true,
                     title: __('Order Payment', 'woocommerce'),
@@ -146,26 +145,28 @@ function velvpay_init_payment_class() {
                     chargeCustomer: false,
                     postPaymentInstructions: __('Thank you for your order.', 'woocommerce')
                 );
-
-                // Log the response for debugging
-                error_log(print_r($response, true));
-
+        
+                // Debugging output for the response
+                debug_output($response); // Uncomment for debugging
+        
                 // Check if the payment was successful
                 if ($response && $response->status === 'success') {
                     // Store the successful response in the order
                     $order->update_meta_data('_velvpay_response', json_encode($response));
                     $order->save();
-
+        
                     // Redirect customer to payment link
                     return array(
                         'result' => 'success',
                         'redirect' => $response->link,
                     );
                 } else {
+                    error_log('Payment response error: ' . json_encode($response));
                     wc_add_notice(__('Payment failed. Please try again.', 'woocommerce'), 'error');
                     return;
                 }
             } catch (Exception $e) {
+                error_log('Payment processing error: ' . $e->getMessage());
                 wc_add_notice(__('Payment error: ', 'woocommerce') . $e->getMessage(), 'error');
                 return;
             }
