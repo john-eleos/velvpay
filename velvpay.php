@@ -12,6 +12,7 @@
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
 use Digikraaft\VelvPay\VelvPay;
+use Digikraaft\VelvPay\Payment;
 
 // Load text domain for translations
 add_action('plugins_loaded', 'velvpay_load_textdomain');
@@ -137,7 +138,7 @@ function velvpay_init_payment_class() {
                 VelvPay::setRequestReference('ORDER_' . $order->get_id());
 
                 // Initiate payment using the VelvPay SDK
-                $response = VelvPay::initiatePayment(
+                $response = Payment::initiatePayment(
                     amount: $order->get_total(),
                     isNaira: true,
                     title: __('Order Payment', 'woocommerce'),
