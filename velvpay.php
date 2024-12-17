@@ -30,7 +30,7 @@ function velvpay_init_payment_class() {
     class WC_VELVPAY_PLATFORM extends WC_Payment_Gateway {
         public function __construct() {
             $this->id = 'velvpay';
-            $this->icon = 'https://velvpay.com/assets/velvpay_logo.svg';
+            $this->icon = 'https://res.cloudinary.com/figo-payment/image/upload/v1714866146/xb7esgdalpgckbitztob.png';
             $this->has_fields = true;
             $this->method_title = 'Velvpay';
             $this->method_description = 'Pay with Velvpay';
