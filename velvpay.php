@@ -9,6 +9,9 @@
  * License: GPLv3
  */
 
+ require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
+
+
  use Digikraaft\VelvPay\VelvPay;
  use Digikraaft\VelvPay\Payment;
 
@@ -125,6 +128,14 @@ function velvpay_init_payment_class() {
         public function process_payment( $order_id ) {
             // Retrieve the WooCommerce order details
             $order = wc_get_order( $order_id );
+
+
+            // Check if the VelvPay class exists
+            if (!class_exists('Digikraaft\VelvPay\VelvPay')) {
+                error_log('VelvPay class not found!');
+                wc_add_notice('Payment error: VelvPay integration failed.', 'error');
+                return;
+            }
         
             try {
                 // Set VelvPay keys
@@ -148,7 +159,7 @@ function velvpay_init_payment_class() {
                 );
         
                 // Log the response for debugging
-error_log(print_r($response, true));
+                error_log(print_r($response, true));
                 // Check if the payment was successful
                 if ($response && $response->status === 'success') {
                     // Store the successful response in the order
