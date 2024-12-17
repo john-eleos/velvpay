@@ -11,16 +11,8 @@
 
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
-use Digikraaft\VelvPay\VelvPay;
-use Digikraaft\VelvPay\Payment;
-use Digikraaft\VelvPay\Exceptions\InvalidArgumentException;
-use Digikraaft\VelvPay\Util\Util;
-
-// Load text domain for translations
-add_action('plugins_loaded', 'velvpay_load_textdomain');
-function velvpay_load_textdomain() {
-    load_plugin_textdomain('woocommerce', false, dirname(plugin_basename(__FILE__)) . '/languages/');
-}
+// Ensure proper inclusion of core WordPress files
+require_once(ABSPATH . 'wp-admin/includes/plugin.php');
 
 // Custom debug output function
 function debug_output($data) {
@@ -49,8 +41,8 @@ function velvpay_init_payment_class() {
             $this->id = 'velvpay'; // payment gateway plugin ID
             $this->icon = 'https://velvpay.com/assets/velvpay_logo.svg'; // URL of the icon displayed on the checkout page
             $this->has_fields = true; // enables a custom credit card form if needed
-            $this->method_title = __('Velvpay', 'woocommerce');
-            $this->method_description = __('Pay with Velvpay', 'woocommerce'); // displayed on the options page
+            $this->method_title = 'Velvpay';
+            $this->method_description = 'Pay with Velvpay'; // displayed on the options page
 
             $this->supports = array('products'); // supports products
 
@@ -76,48 +68,48 @@ function velvpay_init_payment_class() {
         public function init_form_fields() {
             $this->form_fields = array(
                 'enabled' => array(
-                    'title' => __('Enable/Disable', 'woocommerce'),
-                    'label' => __('Enable Velvpay', 'woocommerce'),
+                    'title' => 'Enable/Disable',
+                    'label' => 'Enable Velvpay',
                     'type' => 'checkbox',
                     'default' => 'no',
                 ),
                 'title' => array(
-                    'title' => __('Title', 'woocommerce'),
+                    'title' => 'Title',
                     'type' => 'text',
-                    'description' => __('This controls the title which the user sees during checkout.', 'woocommerce'),
-                    'default' => __('VelvPay Payment', 'woocommerce'),
+                    'description' => 'This controls the title which the user sees during checkout.',
+                    'default' => 'VelvPay Payment',
                     'desc_tip' => true,
                 ),
                 'description' => array(
-                    'title' => __('Description', 'woocommerce'),
+                    'title' => 'Description',
                     'type' => 'textarea',
-                    'description' => __('This controls the description which the user sees during checkout.', 'woocommerce'),
-                    'default' => __('Secure payment via VelvPay.', 'woocommerce'),
+                    'description' => 'This controls the description which the user sees during checkout.',
+                    'default' => 'Secure payment via VelvPay.',
                 ),
                 'publishable_key' => array(
-                    'title' => __('Publishable Key', 'woocommerce'),
+                    'title' => 'Publishable Key',
                     'type' => 'text',
                 ),
                 'private_key' => array(
-                    'title' => __('Private Key', 'woocommerce'),
+                    'title' => 'Private Key',
                     'type' => 'password',
                 ),
                 'encryption_key' => array(
-                    'title' => __('Encryption Key', 'woocommerce'),
+                    'title' => 'Encryption Key',
                     'type' => 'password',
-                    'description' => __('Your VelvPay encryption key for added security.', 'woocommerce'),
+                    'description' => 'Your VelvPay encryption key for added security.',
                 ),
                 'webhook_url' => array(
-                    'title' => __('Webhook URL', 'woocommerce'),
+                    'title' => 'Webhook URL',
                     'type' => 'text',
-                    'description' => sprintf(__('Copy this URL to your VelvPay account for webhook notifications: %s', 'woocommerce'), esc_url($this->get_webhook_url())),
+                    'description' => sprintf('Copy this URL to your VelvPay account for webhook notifications: %s', esc_url($this->get_webhook_url())),
                     'default' => $this->get_webhook_url(),
                     'custom_attributes' => array('readonly' => 'readonly'), // Make it read-only
                 ),
                 'webhook_token' => array(
-                    'title' => __('Webhook Token', 'woocommerce'),
+                    'title' => 'Webhook Token',
                     'type' => 'text',
-                    'description' => __('This token is used to authenticate webhook requests. You can regenerate it if needed.', 'woocommerce'),
+                    'description' => 'This token is used to authenticate webhook requests. You can regenerate it if needed.',
                     'default' => $this->generate_webhook_token(),
                     'custom_attributes' => array('readonly' => 'readonly'), // Make it read-only
                 ),
@@ -146,7 +138,6 @@ function velvpay_init_payment_class() {
             return $this->webhook_token;
         }
 
-
         public function process_payment($order_id) {
             $order = wc_get_order($order_id);
         
@@ -162,7 +153,7 @@ function velvpay_init_payment_class() {
                 );
             } catch (InvalidArgumentException $e) {
                 error_log('Invalid API keys: ' . $e->getMessage());
-                wc_add_notice(__('Payment error: Invalid API keys.', 'woocommerce'), 'error');
+                wc_add_notice('Payment error: Invalid API keys.', 'error');
                 return;
             }
         
@@ -174,10 +165,10 @@ function velvpay_init_payment_class() {
                 $response = Payment::initiatePayment(
                     amount: $order->get_total(),
                     isNaira: true,
-                    title: __('Order Payment', 'woocommerce'),
-                    description: __('Order #', 'woocommerce') . $order->get_id(),
+                    title: 'Order Payment',
+                    description: 'Order #' . $order->get_id(),
                     chargeCustomer: false,
-                    postPaymentInstructions: __('Thank you for your order.', 'woocommerce')
+                    postPaymentInstructions: 'Thank you for your order.'
                 );
         
                 // Debugging output for the response
@@ -196,12 +187,12 @@ function velvpay_init_payment_class() {
                     );
                 } else {
                     error_log('Payment response error: ' . json_encode($response));
-                    wc_add_notice(__('Payment failed. Please try again.', 'woocommerce'), 'error');
+                    wc_add_notice('Payment failed. Please try again.', 'error');
                     return;
                 }
             } catch (Exception $e) {
                 error_log('Payment processing error: ' . $e->getMessage());
-                wc_add_notice(__('Payment error: ', 'woocommerce') . $e->getMessage(), 'error');
+                wc_add_notice('Payment error: ' . $e->getMessage(), 'error');
                 return;
             }
         }
@@ -247,18 +238,18 @@ function velvpay_init_payment_class() {
                             $order->payment_complete();
                             $order->reduce_order_stock();
                             WC()->cart->empty_cart();
-                            $order->add_order_note(__('Payment was successful via Velvpay.', 'woocommerce'));
+                            $order->add_order_note('Payment was successful via Velvpay.');
                             return array(
                                 'result' => 'success',
                                 'redirect' => $this->get_return_url($order),
                             );
                         case 'failed':
-                            $order->update_status('cancelled', __('Payment failed via Velvpay.', 'woocommerce'));
-                            wc_add_notice(__('Please try again.', 'woocommerce'), 'error');
+                            $order->update_status('cancelled', 'Payment failed via Velvpay.');
+                            wc_add_notice('Please try again.', 'error');
                             return;
                         case 'pending':
-                            $order->update_status('on-hold', __('Payment is pending via Velvpay.', 'woocommerce'));
-                            wc_add_notice(__('Payment is pending via Velvpay.', 'woocommerce'), 'error');
+                            $order->update_status('on-hold', 'Payment is pending via Velvpay.');
+                            wc_add_notice('Payment is pending via Velvpay.', 'error');
                             return;
                     }
                 } else {
@@ -278,15 +269,12 @@ function velvpay_init_payment_class() {
             $this->update_option('webhook_token', $new_token);
 
             // Redirect back to settings page with a notice
-            wc_add_notice(__('Webhook token regenerated successfully.', 'woocommerce'), 'success');
+            wc_add_notice('Webhook token regenerated successfully.', 'success');
             wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . $this->id));
             exit;
         }
     }
-
-
 }
-
 
 // AJAX action to handle the regenerate request
 add_action('wp_ajax_regenerate_webhook_token', 'velvpay_regenerate_webhook_token');
