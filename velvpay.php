@@ -206,6 +206,28 @@ function velvpay_init_payment_class() {
     }
 }
 
+// Add JavaScript for button functionality
+add_action('admin_footer', 'velvpay_admin_script');
+function velvpay_admin_script() {
+    ?>
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        $('#regenerate_webhook_token').on('click', function(e) {
+            e.preventDefault();
+            var data = {
+                'action': 'regenerate_webhook_token',
+                'gateway': 'velvpay'
+            };
+
+            $.post(ajaxurl, data, function(response) {
+                location.reload(); // Reload the page to see the new token
+            });
+        });
+    });
+    </script>
+    <?php
+}
+
 // AJAX action to handle the regenerate request
 add_action('wp_ajax_regenerate_webhook_token', 'velvpay_regenerate_webhook_token');
 function velvpay_regenerate_webhook_token() {
@@ -233,10 +255,17 @@ function velvpay_checkout_redirect() {
             var paymentLink = urlParams.get('payment_link');
 
             if (paymentLink) {
-                // Open the payment link in a new tab
-                window.open(paymentLink, '_blank');
+                // Create a temporary link element
+                var link = document.createElement('a');
+                link.href = paymentLink;
+                link.target = '_blank'; // Open in new tab
+                link.style.display = 'none'; // Hide the link
 
-                // Redirect to the cart page after a slight delay
+                document.body.appendChild(link); // Append the link to the body
+                link.click(); // Simulate a click on the link
+                document.body.removeChild(link); // Remove the link after clicking
+
+                // Optionally, redirect to the cart or show a message
                 setTimeout(function() {
                     window.location.href = '<?php echo esc_url(wc_get_cart_url()); ?>';
                 }, 1000); // Adjust delay as needed
