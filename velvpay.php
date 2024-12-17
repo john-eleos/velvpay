@@ -114,7 +114,7 @@ function velvpay_init_payment_class() {
                     'custom_attributes' => array('readonly' => 'readonly'), // Make it read-only
                 ),
                 'regenerate_webhook_token' => array(
-                    'title' => '',
+                    'title' => 'Regenrate Token',
                     'type' => 'button',
                     'class' => 'button regenerate-token',
                     'description' => '',
