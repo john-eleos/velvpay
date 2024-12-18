@@ -48,11 +48,14 @@ function velvpay_init_payment_class() {
             $this->publishable_key = sanitize_text_field($this->get_option('publishable_key'));
             $this->encryption_key = sanitize_text_field($this->get_option('encryption_key'));
             $this->webhook_token = sanitize_text_field($this->get_option('webhook_token'));
+            $this->postPaymentInstructions = sanitize_text_field($this->get_option('postPaymentInstructions'));
             $this->webhook_url = $this->get_webhook_url();
 
             // Action hooks for settings
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
             add_action('woocommerce_api_' . strtolower($this->id), array($this, 'webhook'));
+
+
         }
 
         public function init_form_fields() {
@@ -62,11 +65,14 @@ function velvpay_init_payment_class() {
                 'title' => array('title' => 'Title', 'type' => 'text', 'description' => 'Title seen during checkout.', 'default' => 'VelvPay Payment', 'desc_tip' => true),
                 'description' => array('title' => 'Description', 'type' => 'textarea', 'description' => 'Description seen during checkout.', 'default' => 'Secure payment via VelvPay.'),
                 'publishable_key' => array('title' => 'Publishable Key', 'type' => 'text'),
+                'postPaymentInstructions' => array('title' => 'Post Payment Instructions', 'type' => 'textarea', 'description' => 'Instructions for your customer after payment is made.', 'default' => 'Thank you for your order.'),
                 'private_key' => array('title' => 'Private Key', 'type' => 'password'),
                 'encryption_key' => array('title' => 'Encryption Key', 'type' => 'password', 'description' => 'VelvPay encryption key for security.'),
                 'webhook_url' => array('title' => 'Webhook URL', 'type' => 'text', 'description' => sprintf('Copy this URL to your VelvPay account for webhook notifications: %s', esc_url($this->get_webhook_url())), 'default' => esc_url($this->get_webhook_url()), 'custom_attributes' => array('readonly' => 'readonly')),
                 'webhook_token' => array('title' => 'Webhook Token', 'type' => 'text', 'description' => 'Token for authenticating webhook requests.', 'default' => $this->generate_webhook_token(), 'custom_attributes' => array('readonly' => 'readonly')),
+
             );
+
         }
 
         public function get_webhook_url() {
@@ -74,12 +80,18 @@ function velvpay_init_payment_class() {
         }
 
         public function generate_webhook_token() {
-            if (!$this->webhook_token) {
-                $this->webhook_token = bin2hex(random_bytes(16));
-                $this->update_option('webhook_token', $this->webhook_token);
+            $webhookKey = $this->get_option('webhook_token'); 
+        
+            if (!$webhookKey) {
+                $webhookKey = bin2hex(random_bytes(16)); // Generate a secure random token
+                $this->update_option('webhook_token', $webhookKey); // Save the token
             }
-            return $this->webhook_token;
+        
+            return $webhookKey; // Return the token
         }
+        
+
+
 
         public function process_payment($order_id) {
             $order = wc_get_order($order_id);
@@ -102,15 +114,19 @@ function velvpay_init_payment_class() {
                     $item_descriptions[] = $item->get_name() . ' (Qty: ' . $item->get_quantity() . ')';
                 }
                 $description = implode(', ', $item_descriptions);
-                $chargeCustomer = $this->charge_customer;
+                $chargeCustomer = $this->get_option('charge_customer');
+                $postPaymentInstructions = $this->get_option('postPaymentInstructions');
+
+                $orderLink = $order->get_view_order_url();
 
                 $response = Payment::initiatePayment(
                     amount: $order->get_total(),
                     isNaira: true,
                     title: 'Payment for Order #' . $order->get_id(),
                     description: $description,
+                    redirectUrl: $orderLink,
                     chargeCustomer: $chargeCustomer,
-                    postPaymentInstructions: 'Thank you for your order.'
+                    postPaymentInstructions: $postPaymentInstructions
                 );
 
                 error_log("Response received from VelvPay: " . json_encode($response));
@@ -123,15 +139,15 @@ function velvpay_init_payment_class() {
                     $paymentUrl = $response->link;
 
                    // Trigger a browser redirect using JavaScript
-                    echo "<script type='text/javascript'>
-                    window.open('$paymentUrl', '_blank');
-                </script>";
+                    //     echo "<script type='text/javascript'>
+                    //     window.open('$paymentUrl', '_blank');
+                    // </script>";
 
                     // Return success
-                    // return array(
-                    //     'result' => 'success',
-                    //     'redirect' => '',
-                    // );
+                    return array(
+                        'result' => 'success',
+                        'redirect' => $paymentUrl,
+                    );
 
                 } else {
                     error_log("Payment failed for order ID: $order_id. Response: " . json_encode($response));
@@ -206,51 +222,25 @@ function velvpay_init_payment_class() {
         }
 
         public function regenerate_webhook_token() {
+            // Force generation of a new token
             $new_token = bin2hex(random_bytes(16));
-            $this->update_option('webhook_token', $new_token);
+            
+            // Update the option directly
+            update_option('woocommerce_velvpay_webhook_token', $new_token);
+            
+            // Also update the instance variable
+            $this->webhook_token = $new_token;
+            
+            // Add a success notice
             wc_add_notice('Webhook token regenerated successfully.', 'success');
-            wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . $this->id));
-            exit;
+            
+            // Optional: Log the token regeneration
+            error_log('Velvpay Webhook Token Regenerated: ' . $new_token);
+            
+            return $new_token;
         }
     }
 }
 
-// Add JavaScript for button functionality
-add_action('admin_footer', 'velvpay_admin_script');
-function velvpay_admin_script() {
-    ?>
-    <script type="text/javascript">
-    jQuery(document).ready(function($) {
-        $('#regenerate_webhook_token').on('click', function(e) {
-            e.preventDefault();
-            var data = {
-                'action': 'regenerate_webhook_token',
-                'gateway': 'velvpay'
-            };
-
-            $.post(ajaxurl, data, function(response) {
-                location.reload(); // Reload the page to see the new token
-            });
-        });
-    });
-    </script>
-    <?php
-}
-
-// AJAX action to handle the regenerate request
-add_action('wp_ajax_regenerate_webhook_token', 'velvpay_regenerate_webhook_token');
-function velvpay_regenerate_webhook_token() {
-    if (!current_user_can('manage_options')) {
-        wp_die('Unauthorized user', 'Unauthorized', array('response' => 403));
-    }
-
-    $gateway = isset($_GET['gateway']) ? sanitize_text_field($_GET['gateway']) : '';
-    if ($gateway === 'velvpay') {
-        $gateway_instance = new WC_VELVPAY_PLATFORM();
-        $gateway_instance->regenerate_webhook_token();
-    }
-
-    wp_die();
-}
 
 

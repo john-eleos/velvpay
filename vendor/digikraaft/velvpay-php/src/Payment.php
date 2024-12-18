@@ -50,6 +50,7 @@ class Payment extends ApiResource
      * @param string $description
      * @param bool $chargeCustomer
      * @param string $postPaymentInstructions
+     * @param string $redirectUrl
      * @return array|object
      * @throws InvalidArgumentException
      */
@@ -58,6 +59,7 @@ class Payment extends ApiResource
         bool $isNaira = false,
         string $title,
         string $description,
+        string $redirectUrl,
         bool $chargeCustomer = false,
         string $postPaymentInstructions
     ): array|object
@@ -67,6 +69,7 @@ class Payment extends ApiResource
             'isNaira' => $isNaira,
             'title' => $title,
             'description' => $description,
+            'redirectUrl' => $redirectUrl,
             'chargeCustomer' => $chargeCustomer,
             'postPaymentInstructions' => $postPaymentInstructions,
         ]);
