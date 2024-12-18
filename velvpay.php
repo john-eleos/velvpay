@@ -220,6 +220,10 @@ function velvpay_init_payment_class() {
                         case 'failed':
                             $order->update_status('cancelled', 'Payment failed via Velvpay.');
                             wc_add_notice('Please try again.', 'error');
+                            return array(
+                                'result'   => 'failure',
+                                'redirect' => wc_get_cart_url(), // Redirect on failure
+                            );
                             return;
                         case 'pending':
                             $order->update_status('on-hold', 'Payment is pending via Velvpay.');
