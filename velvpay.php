@@ -95,7 +95,7 @@ function velvpay_init_payment_class() {
 
         public function process_payment($order_id) {
             $order = wc_get_order($order_id);
-            error_log("Starting payment process for order ID: $order_id");
+            //error_log("Starting payment process for order ID: $order_id");
 
             if (!$order || !$order->get_total() || $order->get_status() !== 'pending') {
                 wc_add_notice('Invalid order or already processed.', 'error');
@@ -104,10 +104,10 @@ function velvpay_init_payment_class() {
 
             try {
                 VelvPay::setKeys($this->private_key, $this->publishable_key, $this->encryption_key);
-                error_log("VelvPay keys set successfully.");
+                //error_log("VelvPay keys set successfully.");
 
                 VelvPay::setRequestReference('ORDER_' . $order->get_id());
-                error_log("Request reference set to: ORDER_" . $order->get_id());
+                //error_log("Request reference set to: ORDER_" . $order->get_id());
 
                 $item_descriptions = [];
                 foreach ($order->get_items() as $item) {
@@ -130,19 +130,14 @@ function velvpay_init_payment_class() {
                     postPaymentInstructions: $postPaymentInstructions
                 );
 
-                error_log("Response received from VelvPay: " . json_encode($response));
+                //error_log("Response received from VelvPay: " . json_encode($response));
 
                 if ($response && $response->status === 'success') {
                     $order->update_meta_data('_velvpay_response', json_encode($response));
                     $order->save();
-                    error_log("Payment successful for order ID: $order_id.");
+                    //error_log("Payment successful for order ID: $order_id.");
 
                     $paymentUrl = $response->link;
-
-                   // Trigger a browser redirect using JavaScript
-                    //     echo "<script type='text/javascript'>
-                    //     window.open('$paymentUrl', '_blank');
-                    // </script>";
 
                     // Return success
                     return array(
@@ -151,12 +146,12 @@ function velvpay_init_payment_class() {
                     );
 
                 } else {
-                    error_log("Payment failed for order ID: $order_id. Response: " . json_encode($response));
+                    //error_log("Payment failed for order ID: $order_id. Response: " . json_encode($response));
                     wc_add_notice('Payment failed. Please try again.', 'error');
                     return;
                 }
             } catch (Exception $e) {
-                error_log('Payment processing error for order ID: ' . $order_id . ' - ' . $e->getMessage());
+                //error_log('Payment processing error for order ID: ' . $order_id . ' - ' . $e->getMessage());
                 wc_add_notice('Payment error: ' . esc_html($e->getMessage()), 'error');
                 return;
             }
@@ -177,14 +172,14 @@ function velvpay_init_payment_class() {
             
             // Step 1: Read the raw input
             $raw_input = file_get_contents('php://input');
-            error_log('Raw input: ' . $raw_input);
+            //error_log('Raw input: ' . $raw_input);
 
             // Step 2: Decode the JSON payload
             $payload = json_decode($raw_input, true);
 
             // Step 3: Check for JSON decode errors
             if (json_last_error() !== JSON_ERROR_NONE) {
-                error_log('JSON Decode Error: ' . json_last_error_msg());
+                //error_log('JSON Decode Error: ' . json_last_error_msg());
                 wp_die('Invalid JSON received', 'Invalid Payload', array('response' => 400));
             }
 
@@ -233,7 +228,7 @@ function velvpay_init_payment_class() {
                     wp_die('Order with the specified short link not found', 'Order Not Found', array('response' => 404));
                 }
             } else {
-                error_log('Payment link is missing or empty');
+                //error_log('Payment link is missing or empty');
                 wp_die('Payment link is missing', 'Invalid Payload', array('response' => 400));
             }
 
@@ -254,7 +249,7 @@ function velvpay_init_payment_class() {
             wc_add_notice('Webhook token regenerated successfully.', 'success');
             
             // Optional: Log the token regeneration
-            error_log('Velvpay Webhook Token Regenerated: ' . $new_token);
+            //error_log('Velvpay Webhook Token Regenerated: ' . $new_token);
             
             return $new_token;
         }
