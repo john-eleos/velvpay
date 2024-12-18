@@ -117,7 +117,8 @@ function velvpay_init_payment_class() {
                 $chargeCustomer = $this->get_option('charge_customer') === 'yes'; 
                 $postPaymentInstructions = $this->get_option('postPaymentInstructions');
 
-                $orderLink = $order->get_view_order_url();
+                // $orderLink = $order->get_view_order_url();
+                $orderLink = $this->get_return_url($order)
 
                 $response = Payment::initiatePayment(
                     amount: $order->get_total(),
