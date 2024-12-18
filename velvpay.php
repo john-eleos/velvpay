@@ -175,8 +175,11 @@ function velvpay_init_payment_class() {
             }
 
             $payload = json_decode(file_get_contents('php://input'), true);
-            if (isset($payload['link'])) {
-                $short_link = sanitize_text_field($payload['link']);
+
+            $paymentLink = $payload['link'];
+            error_log("Payment successful for order ID: $order_id. link: $paymentLink $payload");
+            if (empty($payload['link'])) {
+                $short_link = sanitize_text_field($paymentLink);
                 
                 $args = array(
                     'limit' => -1,
