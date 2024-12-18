@@ -173,12 +173,22 @@ function velvpay_init_payment_class() {
             if ($auth_header !== $expected_token) {
                 wp_die('Unauthorized request', 'Unauthorized', array('response' => 401));
             }
+            
+            // Step 1: Read the raw input
+            $raw_input = file_get_contents('php://input');
+            error_log('Raw input: ' . $raw_input);
 
-            $payload = json_decode(file_get_contents('php://input'), true);
+            // Step 2: Decode the JSON payload
+            $payload = json_decode($raw_input, true);
 
-            $paymentLink = $payload['link'];
-            error_log("Payment successful for order ID: link: $paymentLink $payload");
-            if (empty($payload['link'])) {
+            // Step 3: Check for JSON decode errors
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log('JSON Decode Error: ' . json_last_error_msg());
+                wp_die('Invalid JSON received', 'Invalid Payload', array('response' => 400));
+            }
+
+            // Step 4: Check if 'link' is set and not empty
+            if (isset($payload['link']) && !empty($payload['link'])) {
                 $short_link = sanitize_text_field($paymentLink);
                 
                 $args = array(
@@ -218,7 +228,8 @@ function velvpay_init_payment_class() {
                     wp_die('Order with the specified short link not found', 'Order Not Found', array('response' => 404));
                 }
             } else {
-                wp_die('Invalid payload', 'Invalid Payload', array('response' => 400));
+                error_log('Payment link is missing or empty');
+                wp_die('Payment link is missing', 'Invalid Payload', array('response' => 400));
             }
 
             http_response_code(200);
