@@ -188,7 +188,8 @@ function velvpay_init_payment_class() {
             }
 
             // Step 4: Check if 'link' is set and not empty
-            if (isset($payload['link']) && !empty($payload['link'])) {
+            if (isset($payload['data']['link']) && !empty($payload['data']['link'])) {
+                $paymentLink = $payload['data']['link'];
                 $short_link = sanitize_text_field($paymentLink);
                 
                 $args = array(
@@ -206,7 +207,7 @@ function velvpay_init_payment_class() {
                 $orders = wc_get_orders($args);
                 if (!empty($orders)) {
                     $order = $orders[0];
-                    $status = sanitize_text_field($payload['status']);
+                    $status = sanitize_text_field($payload['data']['status']);
 
                     switch ($status) {
                         case 'successful':
