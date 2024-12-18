@@ -118,7 +118,7 @@ function velvpay_init_payment_class() {
                 $postPaymentInstructions = $this->get_option('postPaymentInstructions');
 
                 // $orderLink = $order->get_view_order_url();
-                $orderLink = $this->get_return_url($order)
+                $orderLink = $this->get_return_url($order);
 
                 $response = Payment::initiatePayment(
                     amount: $order->get_total(),
@@ -224,7 +224,6 @@ function velvpay_init_payment_class() {
                                 'result'   => 'failure',
                                 'redirect' => wc_get_cart_url(), // Redirect on failure
                             );
-                            return;
                         case 'pending':
                             $order->update_status('on-hold', 'Payment is pending via Velvpay.');
                             wc_add_notice('Payment is pending via Velvpay.', 'error');
