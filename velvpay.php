@@ -43,7 +43,7 @@ function velvpay_init_payment_class() {
             $this->title = sanitize_text_field($this->get_option('title'));
             $this->description = sanitize_textarea_field($this->get_option('description'));
             $this->enabled = $this->get_option('enabled') === 'yes' ? 'yes' : 'no';
-            $this->charge_customer = $this->get_option('charge_customer') === 'yes';
+            $this->charge_customer = $this->get_option('charge_customer') === 'yes' ? 'yes' : 'no';
             $this->private_key = sanitize_text_field($this->get_option('private_key'));
             $this->publishable_key = sanitize_text_field($this->get_option('publishable_key'));
             $this->encryption_key = sanitize_text_field($this->get_option('encryption_key'));
@@ -114,7 +114,7 @@ function velvpay_init_payment_class() {
                     $item_descriptions[] = $item->get_name() . ' (Qty: ' . $item->get_quantity() . ')';
                 }
                 $description = implode(', ', $item_descriptions);
-                $chargeCustomer = $this->get_option('charge_customer');
+                $chargeCustomer = $this->get_option('charge_customer') === 'yes'; 
                 $postPaymentInstructions = $this->get_option('postPaymentInstructions');
 
                 $orderLink = $order->get_view_order_url();
