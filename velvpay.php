@@ -3,7 +3,7 @@
  * Plugin Name: Velvpay Official
  * Plugin URI: 
  * Description: Allow for seamless payment using the Velvpay platform.
- * Authors: johneleos (ifedayo@velvpay.com), Velv Technologies Limited
+ * Authors: johneleos
  * Author URI: https://velvpay.com
  * Version: 1.0.2
  * License: GPLv3
