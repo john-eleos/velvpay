@@ -1,5 +1,5 @@
 === Velvpay Official ===
-Contributors: velvtechnologies
+Contributors: johneleos (ifedayo@velvpay.com),velvtechnologies
 Tags: payment, velvpay, woocommerce
 Requires at least: 5.0
 Tested up to: 6.7
