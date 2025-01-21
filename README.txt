@@ -3,7 +3,7 @@ Contributors: johneleos
 Tags: payment, velvpay, woocommerce
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv3
 
 Short Description: Integrate Velvpay as a seamless payment method in your WooCommerce store.
@@ -31,5 +31,5 @@ The webhook is used to receive payment status updates from Velvpay.
 
 == Changelog ==
 
-= 1.0.1 =
+= 1.0.3 =
 * Initial release.
