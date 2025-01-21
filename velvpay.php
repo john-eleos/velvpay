@@ -123,9 +123,12 @@ function velvpay_official_init_payment_class() {
                 if ($response && $response->status === 'success') {
                     $paymentUrl = $response->link;
 
+
                     $order->update_meta_data('_velvpay_response', wp_json_encode($response)); // Updated here
-                    $order->update_meta_data('_velvpay_paymentlink', $paymentUrl);
                     $order->save();
+
+                    // Store payment link in order notes
+                    $order->add_order_note('Velvpay Payment Link: ' . $paymentUrl);
 
                     return array(
                         'result' => 'success',
@@ -149,6 +152,11 @@ function velvpay_official_init_payment_class() {
 
             // Validate Authorization header
             $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(trim(wp_unslash($_SERVER['HTTP_AUTHORIZATION']))) : '';
+            // Validate the authorization header format
+            if (!preg_match('/^Bearer\s[\w-]+\.[\w-]+\.[\w-]+$/', $auth_header)) {
+                wp_die('Invalid authorization header format', 'Unauthorized', array('response' => 401));
+            }
+
             $expected_token = 'Bearer ' . $this->get_option('webhook_token');
 
             if ($auth_header !== $expected_token) {
@@ -168,19 +176,13 @@ function velvpay_official_init_payment_class() {
                 $paymentLink = sanitize_text_field($payload['data']['link']);
                 $status = isset($payload['data']['status']) ? sanitize_text_field($payload['data']['status']) : '';
 
-                // Optimized query to find the order
-                $args = array(
-                    'limit' => 1, // Limit to 1 order to improve performance
-                    'meta_query' => array(
-                        array(
-                            'key' => '_velvpay_paymentlink',
-                            'value' => $paymentLink, // Use exact match instead of LIKE
-                            'compare' => '=' // Exact match for better performance
-                        )
-                    )
-                );
+                // Find the order with the matching payment link in order notes
+                $orders = wc_get_orders(array(
+                    'limit' => 1,
+                    'status' => 'pending',
+                    'notes' => 'Velvpay Payment Link: ' . $paymentLink,
+                ));
 
-                $orders = wc_get_orders($args);
                 if (!empty($orders)) {
                     $order = $orders[0];
 
