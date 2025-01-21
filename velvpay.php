@@ -121,9 +121,11 @@ function velvpay_official_init_payment_class() {
                 );
 
                 if ($response && $response->status === 'success') {
-                    $order->update_meta_data('_velvpay_response', json_encode($response));
-                    $order->save();
                     $paymentUrl = $response->link;
+
+                    $order->update_meta_data('_velvpay_response', wp_json_encode($response)); // Updated here
+                    $order->update_meta_data('_velvpay_paymentlink', $paymentUrl);
+                    $order->save();
 
                     return array(
                         'result' => 'success',
@@ -140,12 +142,13 @@ function velvpay_official_init_payment_class() {
         }
 
         public function webhook() {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            // Check if REQUEST_METHOD is set and is POST
+            if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
                 wp_die('Invalid request', 'Invalid Request', array('response' => 400));
             }
 
             // Validate Authorization header
-            $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(trim($_SERVER['HTTP_AUTHORIZATION'])) : '';
+            $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(trim(wp_unslash($_SERVER['HTTP_AUTHORIZATION']))) : '';
             $expected_token = 'Bearer ' . $this->get_option('webhook_token');
 
             if ($auth_header !== $expected_token) {
@@ -153,7 +156,7 @@ function velvpay_official_init_payment_class() {
             }
 
             // Read and sanitize raw input
-            $raw_input = file_get_contents('php://input');
+            $raw_input = wp_unslash(file_get_contents('php://input')); // Unslash raw input
             $payload = json_decode($raw_input, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -161,18 +164,18 @@ function velvpay_official_init_payment_class() {
             }
 
             // Process only required fields
-            if (isset($payload['data']['link']) && !empty($payload['data']['link'])) {
+            if (isset($payload['data']) && isset($payload['data']['link']) && !empty($payload['data']['link'])) {
                 $paymentLink = sanitize_text_field($payload['data']['link']);
                 $status = isset($payload['data']['status']) ? sanitize_text_field($payload['data']['status']) : '';
 
+                // Optimized query to find the order
                 $args = array(
-                    'limit' => -1,
-                    'meta_key' => '_velvpay_response',
+                    'limit' => 1, // Limit to 1 order to improve performance
                     'meta_query' => array(
                         array(
-                            'key' => '_velvpay_response',
-                            'value' => '"' . $paymentLink . '"',
-                            'compare' => 'LIKE'
+                            'key' => '_velvpay_paymentlink',
+                            'value' => $paymentLink, // Use exact match instead of LIKE
+                            'compare' => '=' // Exact match for better performance
                         )
                     )
                 );
